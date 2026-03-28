@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
+import { useAudioNarrator } from '@/hooks/useAudioNarrator';
+import AudioController from '@/components/AudioController';
 import CosmicCanvas from '@/components/CosmicCanvas';
 import ScrollSection from '@/components/ScrollSection';
 import ScrollIndicator from '@/components/ScrollIndicator';
@@ -40,6 +42,7 @@ export default function Index() {
   const progress = useScrollProgress();
   const [mouseX, setMouseX] = useState(0.5);
   const [mouseY, setMouseY] = useState(0.5);
+  const audio = useAudioNarrator();
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setMouseX(e.clientX / window.innerWidth);
@@ -47,6 +50,11 @@ export default function Index() {
   }, []);
 
   const activeSection = Math.min(6, Math.floor(progress * 7));
+
+  // Sync scroll section with audio narrator
+  useEffect(() => {
+    audio.updateSection(activeSection);
+  }, [activeSection]);
 
   return (
     <div onMouseMove={handleMouseMove} className="relative">
@@ -337,6 +345,13 @@ export default function Index() {
           </motion.div>
         </div>
       </ScrollSection>
+
+      {/* Audio narrator controller */}
+      <AudioController
+        isEnabled={audio.isEnabled}
+        onToggle={audio.toggle}
+        loadingSection={audio.loadingSection}
+      />
     </div>
   );
 }
