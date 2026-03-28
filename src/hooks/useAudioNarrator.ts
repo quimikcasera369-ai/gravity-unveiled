@@ -158,20 +158,18 @@ export function useAudioNarrator() {
     }
   }, [isEnabled, fetchAudio, stopAll]);
 
-  // Preload next section
+  // Preload next section (sequential to avoid 429)
   const preloadSection = useCallback(async (sectionIndex: number) => {
     if (sectionIndex < 0 || sectionIndex >= NARRATIONS.length) return;
     if (narrationCache.current.has(sectionIndex)) return;
 
     const narration = NARRATIONS[sectionIndex];
     
-    const [ttsUrl, sfxUrl] = await Promise.all([
-      fetchAudio('elevenlabs-tts', { text: narration.text }),
-      fetchAudio('elevenlabs-sfx', { prompt: narration.sfxPrompt, duration: narration.sfxDuration }),
-    ]);
-
-    if (ttsUrl) narrationCache.current.set(sectionIndex, ttsUrl);
+    const sfxUrl = await fetchAudio('elevenlabs-sfx', { prompt: narration.sfxPrompt, duration: narration.sfxDuration });
     if (sfxUrl) sfxCache.current.set(sectionIndex, sfxUrl);
+    
+    const ttsUrl = await fetchAudio('elevenlabs-tts', { text: narration.text });
+    if (ttsUrl) narrationCache.current.set(sectionIndex, ttsUrl);
   }, [fetchAudio]);
 
   const toggle = useCallback(() => {
