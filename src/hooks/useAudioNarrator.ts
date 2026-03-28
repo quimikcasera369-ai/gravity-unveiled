@@ -57,6 +57,8 @@ export function useAudioNarrator() {
   const currentSfx = useRef<HTMLAudioElement | null>(null);
   const lastPlayedSection = useRef(-1);
 
+  const hasShownError = useRef(false);
+
   const fetchAudio = useCallback(async (
     functionName: string,
     body: Record<string, unknown>,
@@ -74,6 +76,16 @@ export function useAudioNarrator() {
       });
 
       if (!response.ok) {
+        if ((response.status === 401 || response.status === 429) && !hasShownError.current) {
+          hasShownError.current = true;
+          toast({
+            variant: 'destructive',
+            title: 'Audio unavailable',
+            description: response.status === 401
+              ? 'ElevenLabs API key issue. Please check your account plan.'
+              : 'Too many requests. Please wait and try again.',
+          });
+        }
         console.error(`${functionName} error:`, response.status);
         return null;
       }
