@@ -88,7 +88,7 @@ export default function Index() {
 
       {/* ==================== SECTION 1: VOID INTRO ==================== */}
       <ScrollSection id="section-0" className="min-h-[120vh]">
-        <div className="text-center">
+        <div className="text-center relative pb-24">
           <motion.p
             className="text-sm tracking-[0.3em] uppercase text-muted-foreground mb-6 font-display"
             initial={{ opacity: 0 }}
