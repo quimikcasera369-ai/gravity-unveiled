@@ -328,7 +328,10 @@ export default function Index() {
               haven't seen yet. The coming decade of observations will put this framework
               to the ultimate test.
             </p>
-            <p className="mt-8 text-xs text-muted-foreground/50 font-display tracking-wider uppercase">
+            <p className="mt-6 text-sm text-muted-foreground/70 font-display">
+              By <span className="text-primary/80">Juan Pablo Figueroa Torres</span>
+            </p>
+            <p className="mt-4 text-xs text-muted-foreground/50 font-display tracking-wider uppercase">
               End of journey · Scroll back to explore
             </p>
           </motion.div>
