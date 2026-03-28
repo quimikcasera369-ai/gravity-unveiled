@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
+import { useAudioNarrator } from '@/hooks/useAudioNarrator';
+import AudioController from '@/components/AudioController';
 import CosmicCanvas from '@/components/CosmicCanvas';
 import ScrollSection from '@/components/ScrollSection';
 import ScrollIndicator from '@/components/ScrollIndicator';
