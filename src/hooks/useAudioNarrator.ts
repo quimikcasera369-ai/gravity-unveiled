@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface NarrationSection {
   text: string;
@@ -57,6 +57,8 @@ export function useAudioNarrator() {
   const currentSfx = useRef<HTMLAudioElement | null>(null);
   const lastPlayedSection = useRef(-1);
 
+  const hasShownError = useRef(false);
+
   const fetchAudio = useCallback(async (
     functionName: string,
     body: Record<string, unknown>,
@@ -74,6 +76,16 @@ export function useAudioNarrator() {
       });
 
       if (!response.ok) {
+        if ((response.status === 401 || response.status === 429) && !hasShownError.current) {
+          hasShownError.current = true;
+          toast({
+            variant: 'destructive',
+            title: 'Audio unavailable',
+            description: response.status === 401
+              ? 'ElevenLabs API key issue. Please check your account plan.'
+              : 'Too many requests. Please wait and try again.',
+          });
+        }
         console.error(`${functionName} error:`, response.status);
         return null;
       }
@@ -146,20 +158,18 @@ export function useAudioNarrator() {
     }
   }, [isEnabled, fetchAudio, stopAll]);
 
-  // Preload next section
+  // Preload next section (sequential to avoid 429)
   const preloadSection = useCallback(async (sectionIndex: number) => {
     if (sectionIndex < 0 || sectionIndex >= NARRATIONS.length) return;
     if (narrationCache.current.has(sectionIndex)) return;
 
     const narration = NARRATIONS[sectionIndex];
     
-    const [ttsUrl, sfxUrl] = await Promise.all([
-      fetchAudio('elevenlabs-tts', { text: narration.text }),
-      fetchAudio('elevenlabs-sfx', { prompt: narration.sfxPrompt, duration: narration.sfxDuration }),
-    ]);
-
-    if (ttsUrl) narrationCache.current.set(sectionIndex, ttsUrl);
+    const sfxUrl = await fetchAudio('elevenlabs-sfx', { prompt: narration.sfxPrompt, duration: narration.sfxDuration });
     if (sfxUrl) sfxCache.current.set(sectionIndex, sfxUrl);
+    
+    const ttsUrl = await fetchAudio('elevenlabs-tts', { text: narration.text });
+    if (ttsUrl) narrationCache.current.set(sectionIndex, ttsUrl);
   }, [fetchAudio]);
 
   const toggle = useCallback(() => {
