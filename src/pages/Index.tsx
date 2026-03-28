@@ -42,6 +42,7 @@ export default function Index() {
   const progress = useScrollProgress();
   const [mouseX, setMouseX] = useState(0.5);
   const [mouseY, setMouseY] = useState(0.5);
+  const audio = useAudioNarrator();
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setMouseX(e.clientX / window.innerWidth);
@@ -49,6 +50,11 @@ export default function Index() {
   }, []);
 
   const activeSection = Math.min(6, Math.floor(progress * 7));
+
+  // Sync scroll section with audio narrator
+  useEffect(() => {
+    audio.updateSection(activeSection);
+  }, [activeSection]);
 
   return (
     <div onMouseMove={handleMouseMove} className="relative">
