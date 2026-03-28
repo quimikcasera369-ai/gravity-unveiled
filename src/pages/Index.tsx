@@ -345,6 +345,13 @@ export default function Index() {
           </motion.div>
         </div>
       </ScrollSection>
+
+      {/* Audio narrator controller */}
+      <AudioController
+        isEnabled={audio.isEnabled}
+        onToggle={audio.toggle}
+        loadingSection={audio.loadingSection}
+      />
     </div>
   );
 }
