@@ -107,9 +107,9 @@ export default function Index() {
           </motion.p>
           <motion.h1
             className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-bold leading-tight cosmic-text-glow"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 1, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 1.5 }}
+            transition={{ delay: 0.3, duration: 1 }}
           >
             What if spacetime
             <br />
