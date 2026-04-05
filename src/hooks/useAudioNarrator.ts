@@ -58,11 +58,38 @@ export function useAudioNarrator() {
   const lastPlayedSection = useRef(-1);
 
   const hasShownError = useRef(false);
+  const blockedFunctions = useRef<Set<string>>(new Set());
+
+  const speakFallback = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 0.85;
+    utterance.volume = 0.9;
+
+    const englishVoice = window.speechSynthesis
+      .getVoices()
+      .find((voice) => voice.lang.toLowerCase().startsWith('en'));
+
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+    return true;
+  }, []);
 
   const fetchAudio = useCallback(async (
     functionName: string,
     body: Record<string, unknown>,
   ): Promise<string | null> => {
+    if (blockedFunctions.current.has(functionName)) {
+      return null;
+    }
+
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`;
       const response = await fetch(url, {
@@ -76,16 +103,21 @@ export function useAudioNarrator() {
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 429) {
+          blockedFunctions.current.add(functionName);
+        }
+
         if ((response.status === 401 || response.status === 429) && !hasShownError.current) {
           hasShownError.current = true;
           toast({
             variant: 'destructive',
             title: 'Audio unavailable',
             description: response.status === 401
-              ? 'ElevenLabs API key issue. Please check your account plan.'
-              : 'Too many requests. Please wait and try again.',
+              ? 'The connected ElevenLabs account is refusing requests, so browser narration fallback is being used when available.'
+              : 'The audio provider is rate-limiting requests, so repeated audio fetches were paused for this session.',
           });
         }
+
         console.error(`${functionName} error:`, response.status);
         return null;
       }
@@ -106,6 +138,9 @@ export function useAudioNarrator() {
     if (currentSfx.current) {
       currentSfx.current.pause();
       currentSfx.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
     }
   }, []);
 
@@ -155,8 +190,13 @@ export function useAudioNarrator() {
       setTimeout(() => {
         audio.play().catch(() => {});
       }, 800);
+      return;
     }
-  }, [isEnabled, fetchAudio, stopAll]);
+
+    if (isEnabled) {
+      speakFallback(narration.text);
+    }
+  }, [isEnabled, fetchAudio, speakFallback, stopAll]);
 
   // Preload next section (sequential to avoid 429)
   const preloadSection = useCallback(async (sectionIndex: number) => {
